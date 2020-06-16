@@ -1,4 +1,4 @@
-'use strict'
+
 
 const path = require('path')
 const webpack = require('webpack')
@@ -24,7 +24,8 @@ module.exports = {
         presets: [
           ['es2015',  { "modules": false }],
           'react'
-        ]
+        ],
+        plugins: ['syntax-dynamic-import']
       }
     }, {
       test: /\.(scss|css)$/,

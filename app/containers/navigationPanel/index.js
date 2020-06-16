@@ -1,16 +1,14 @@
-'use strict'
-
-import React, { Component } from 'react'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
-import { remote } from 'electron'
-import UserPanel from '../userPanel'
-import { parseLangName as Resolved } from '../../utilities/parser'
 import { Modal, Button } from 'react-bootstrap'
+import { parseLangName as Resolved } from '../../utilities/parser'
+import { remote } from 'electron'
+import React, { Component } from 'react'
+import UserPanel from '../userPanel'
 import {
+  fetchSingleGist,
   selectGist,
   selectGistTag,
-  fetchSingleGist,
   updatePinnedTags,
   updatePinnedTagsModalStatus
 } from '../../actions'
@@ -295,7 +293,7 @@ class NavigationPanel extends Component {
         </Modal.Body>
         <Modal.Footer>
           <Button onClick={ this.closePinnedTagsModal.bind(this) }>Cancel</Button>
-          <Button bsStyle="success" onClick={ this.handlePinnedTagSaved.bind(this) }>Save</Button>
+          <Button bsStyle="default" onClick={ this.handlePinnedTagSaved.bind(this) }>Save</Button>
         </Modal.Footer>
       </Modal>
     )
@@ -307,7 +305,8 @@ class NavigationPanel extends Component {
       updateLocalStorage,
       getLoggedInUserInfo,
       reSyncUserGists,
-      launchAuthWindow } = this.props
+      launchAuthWindow
+    } = this.props
 
     return (
       <div className='menu-panel'>

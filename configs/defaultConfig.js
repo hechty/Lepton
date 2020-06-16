@@ -1,4 +1,6 @@
 module.exports = {
+    "theme": "light",
+    "autoUpdate": false,
     "userPanel": {
         "hideProfilePhoto": false
     },
@@ -15,13 +17,30 @@ module.exports = {
         "expanded": true,
         "newSnippetPrivate": false
     },
-    "editor" : {
-        "tabSize": 4
+    "editor": {
+        "tabSize": 4,
+        "validateFilename": true
     },
     "enterprise": {
         "enable": false,
         "host": "",
         "token": "",
         "avatarUrl": ""
+    },
+    "notifications": {
+        "success": true,
+        "failure": true
+    },
+    "shortcuts": {
+        "keyShortcutForSearch": "Shift+Space",
+        "keyNewGist": "CommandOrControl+N",
+        "keyEditGist": "CommandOrControl+E",
+        "keyDeleteGist": "CommandOrControl+Delete",
+        "keySubmitGist": "CommandOrControl+S",
+        "keyImmersiveMode": "CommandOrControl+I",
+        "keyAboutPage": "CommandOrControl+,",
+        "keyDashboard": "CommandOrControl+D",
+        "keyEditorExit": "CommandOrControl+Escape",
+        "keySyncGists": "CommandOrControl+R"
     }
 }

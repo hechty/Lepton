@@ -1,40 +1,39 @@
-'use strict'
-
-import React, { Component } from 'react'
-import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { Image, Modal, Button, ProgressBar } from 'react-bootstrap'
+import { connect } from 'react-redux'
 import { default as GistEditorForm, NEW_GIST } from '../gistEditorForm'
+import { Image, Modal, Button, ProgressBar } from 'react-bootstrap'
+import { remote, ipcRenderer } from 'electron'
 import HumanReadableTime from 'human-readable-time'
-import Notifier from '../../utilities/notifier'
-import './index.scss'
+import { notifySuccess, notifyFailure } from '../../utilities/notifier'
+import React, { Component } from 'react'
 import {
   addLangPrefix as Prefixed,
+  descriptionParser,
   parseCustomTags,
-  descriptionParser } from '../../utilities/parser'
-
+} from '../../utilities/parser'
 import {
-  removeAccessToken,
   logoutUserSession,
-  updateSingleGist,
-  updateGistTags,
-  selectGistTag,
+  removeAccessToken,
   selectGist,
+  selectGistTag,
   updateGistNewModeStatus,
-  updateLogoutModalStatus } from '../../actions/index'
-
+  updateGistTags,
+  updateLogoutModalStatus,
+  updateSingleGist,
+} from '../../actions/index'
 import {
+  CREATE_SINGLE_GIST,
   getGitHubApi,
-  CREATE_SINGLE_GIST
 } from '../../utilities/githubApi'
 
+import './index.scss'
+
 import dojocatImage from '../../utilities/octodex/dojocat.jpg'
-import privateinvestocatImage from '../../utilities/octodex/privateinvestocat.jpg'
 import logoutIcon from './logout.svg'
 import newIcon from './new.svg'
+import privateinvestocatImage from '../../utilities/octodex/privateinvestocat.jpg'
 import syncIcon from './sync.svg'
 
-import { remote, ipcRenderer } from 'electron'
 const conf = remote.getGlobal('conf')
 const logger = remote.getGlobal('logger')
 
@@ -79,7 +78,7 @@ class UserPanel extends Component {
 
     return getGitHubApi(CREATE_SINGLE_GIST)(this.props.accessToken, description, processedFiles, isPublic)
       .catch((err) => {
-        Notifier('Gist creation failed')
+        notifyFailure('Gist creation failed')
         logger.error(JSON.stringify(err))
       })
       .then((response) => {
@@ -97,7 +96,8 @@ class UserPanel extends Component {
       updateGistTags,
       selectGistTag,
       selectGist,
-      searchIndex } = this.props
+      searchIndex
+    } = this.props
 
     const gistId = gistDetails.id
     const files = gistDetails.files
@@ -113,7 +113,7 @@ class UserPanel extends Component {
       const language = files[filename].language || 'Other'
       langs.add(language)
       const prefixedLang = Prefixed(language)
-      if (gistTags.hasOwnProperty(prefixedLang)) {
+      if (Object.prototype.hasOwnProperty.call(gistTags, prefixedLang)) {
         gistTags[prefixedLang].unshift(gistId)
       } else {
         gistTags[prefixedLang] = []
@@ -124,7 +124,7 @@ class UserPanel extends Component {
     // update the custom tags
     const customTags = parseCustomTags(descriptionParser(gistDetails.description).customTags)
     customTags.forEach(tag => {
-      if (gistTags.hasOwnProperty(tag)) {
+      if (Object.prototype.hasOwnProperty.call(gistTags, tag)) {
         gistTags[tag].unshift(gistDetails.id)
       } else {
         gistTags[tag] = []
@@ -163,7 +163,7 @@ class UserPanel extends Component {
       filename: filenameRecords
     })
 
-    Notifier('Gist created', HumanReadableTime(new Date()))
+    notifySuccess('Gist created', HumanReadableTime(new Date()))
   }
 
   renderGistEditorModalBody () {
@@ -171,8 +171,9 @@ class UserPanel extends Component {
       description: '',
       private: kIsPrivate,
       gists: [
-        {filename: '', content: ''}
-      ]}
+        { filename: '', content: '' }
+      ]
+    }
     return (
       <GistEditorForm
         initialData={ initialData }
@@ -268,6 +269,7 @@ class UserPanel extends Component {
     })
     removeAccessToken()
     remote.getCurrentWindow().setTitle('Lepton') // update the app title
+    ipcRenderer.send('session-destroyed')
   }
 
   renderProfile () {

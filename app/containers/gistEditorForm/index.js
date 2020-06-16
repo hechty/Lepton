@@ -1,12 +1,10 @@
-'use strict'
-
-import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Field, FieldArray, reduxForm, formValueSelector } from 'redux-form'
+import { remote, ipcRenderer } from 'electron'
 import { OverlayTrigger, Tooltip, Button, ListGroup, ListGroupItem, Panel } from 'react-bootstrap'
 import GistEditor from '../gistEditor'
+import React, { Component } from 'react'
 import validFilename from 'valid-filename'
-import { ipcRenderer } from 'electron'
 
 import tipsIcon from './ei-question.svg'
 
@@ -14,6 +12,9 @@ import './index.scss'
 
 export const NEW_GIST = 'NEW_GIST'
 export const UPDATE_GIST = 'UPDATE_GIST'
+
+const conf = remote.getGlobal('conf')
+const logger = remote.getGlobal('logger')
 
 const descriptionTips = '[title] description #tag1 #tag2'
 
@@ -66,7 +67,7 @@ class GistEditorFormImpl extends Component {
           <Button
             className='gist-editor-control-button'
             type='submit'
-            bsStyle='success'
+            bsStyle='default'
             disabled={ submitting }>
             Submit
           </Button>
@@ -86,8 +87,17 @@ class GistEditorFormImpl extends Component {
 const valideNotEmptyContent = value => value ? null : 'required'
 
 const validateFilename = value => {
-  if (!value) return 'required'
-  else if (!validFilename(value)) return 'invalid filename'
+  // empty filename is not allowed
+  if (!value) {
+    return 'required'
+  }
+
+  // validate filename according to the .leptonrc configs
+  if (!conf.get('editor').validateFilename) {
+    logger.info('[Filename Validation] According to the config, filename validation has been skipped')
+  } else if (!validFilename(value)) {
+    return 'invalid filename'
+  }
 }
 
 const renderTitleInputField = ({ input, placeholder, type, meta: { touched, error, warning } }) => (
@@ -169,7 +179,7 @@ const renderGistFiles = ({ fields, formStyle, filenameList }) => (
       </a>
       <div className='gist-editor-privacy-checkbox'>
         <Field name='private' id='private' component='input' type='checkbox' disabled={ formStyle === UPDATE_GIST }/>
-         &nbsp;private
+         &nbsp;secret
       </div>
     </div>
   </ListGroup>
@@ -179,7 +189,7 @@ const selector = formValueSelector('gistEditorForm')
 const GistEditorForm = connect(
   state => {
     const gistFiles = selector(state, 'gistFiles')
-    const filenameList = gistFiles && gistFiles.map(({filename}) =>
+    const filenameList = gistFiles && gistFiles.map(({ filename }) =>
       filename)
     return {
       filenameList

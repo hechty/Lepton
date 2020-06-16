@@ -3,11 +3,11 @@
   .font-style-base {
     font-family: Consolas, Menlo, Monaco, "Courier New", monospace;
     font-size: 13px;
-    color: rgb(100,100,100);
+    color: var(--text-secondary);
   }
 
   .section-base {
-    height: 75vh;
+    height: 80vh;
   }
 
   .general-section {
@@ -18,12 +18,14 @@
     @extend .section-base;
     display: flex;
     flex-direction: column;
+    color: var(--text-secondary);
   }
 
   .logo-section {
     @extend .font-style-base;
     font-size: 12px;
     text-align: center;
+    margin-bottom: 10px;
   }
 
   .logo {
@@ -33,10 +35,11 @@
 
   .contributor-section {
     overflow: auto;
-    min-height: 200px;
+    min-height: 150px;
     border-radius: 5px;
     padding: 0 20px;
-    border: solid 1px rgb(200,200,200);
+    border: solid 1px var(--border-color);
+    color: var(--text-secondary);
   }
 
   .license-section {
@@ -45,7 +48,18 @@
     margin-bottom: 20px;
     border-radius: 5px;
     padding: 0 20px;
-    border: solid 1px rgb(200,200,200);
+    border: solid 1px var(--border-color);
+    color: var(--text-secondary);
+  }
+
+  .one-line-section {
+    overflow: auto;
+    min-height: 30px;
+    border-radius: 5px;
+    padding: 4px 10px 0px 10px;
+    white-space: nowrap;
+    border: solid 1px var(--border-color);
+    color: var(--text-secondary);
   }
 
   .license-item {

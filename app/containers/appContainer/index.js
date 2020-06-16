@@ -1,22 +1,26 @@
-'use strict'
-
-import { shell } from 'electron'
-import React, { Component } from 'react'
+import { Alert } from 'react-bootstrap'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
-import { Alert } from 'react-bootstrap'
-import SplitPane from 'react-split-pane'
-import electronLocalStorage from 'electron-json-storage-sync'
-import NavigationPanelDetails from '../navigationPanelDetails'
-import NavigationPanel from '../navigationPanel'
-import LoginPage from '../loginPage'
-import SnippetPanel from '../snippetPanel'
-import SearchPage from '../searchPage'
+import { remote, shell } from 'electron'
+import { updateUpdateAvailableBarStatus } from '../../actions/index'
 import AboutPage from '../aboutPage'
 import Dashboard from '../dashboard'
-import { updateUpdateAvailableBarStatus } from '../../actions/index'
+import electronLocalStorage from 'electron-json-storage-sync'
+import LoginPage from '../loginPage'
+import NavigationPanel from '../navigationPanel'
+import NavigationPanelDetails from '../navigationPanelDetails'
+import React, { Component } from 'react'
+import SearchPage from '../searchPage'
+import SnippetPanel from '../snippetPanel'
+import SplitPane from 'react-split-pane'
+import ThemeManager from '../../utilities/themeManager'
 
 import './index.scss'
+import './scrollbar.scss'
+
+const conf = remote.getGlobal('conf')
+const themeManager = new ThemeManager()
+themeManager.setTheme(conf.get('theme'))
 
 class AppContainer extends Component {
   renderAboutPage () {
@@ -92,7 +96,8 @@ class AppContainer extends Component {
       updateActiveGistAfterClicked,
       reSyncUserGists,
       localPref,
-      searchIndex } = this.props
+      searchIndex
+    } = this.props
 
     return (
       <div>

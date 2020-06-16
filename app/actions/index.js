@@ -1,7 +1,5 @@
-'use strict'
-
 import { getGitHubApi, GET_SINGLE_GIST } from '../utilities/githubApi'
-import Notifier from '../utilities/notifier'
+import { notifyFailure } from '../utilities/notifier'
 import { remote } from 'electron'
 const logger = remote.getGlobal('logger')
 
@@ -224,17 +222,17 @@ export function updateLogoutModalStatus (status) {
 
 export function fetchSingleGist (oldGist, id) {
   return (dispatch, getState) => {
-    let state = getState()
+    const state = getState()
     return getGitHubApi(GET_SINGLE_GIST)(state.accessToken, id)
       .then((details) => {
-        let newGist = Object.assign(oldGist, { details: details })
-        let newGistWithId = {}
+        const newGist = Object.assign(oldGist, { details: details })
+        const newGistWithId = {}
         newGistWithId[id] = newGist
         dispatch(updateSingleGist(newGistWithId))
       })
       .catch((err) => {
         logger.error('The request has failed: ' + err)
-        Notifier('Sync failed', 'Please check your network condition. 01')
+        notifyFailure('Sync failed', 'Please check your network condition. 01')
       })
   }
 }

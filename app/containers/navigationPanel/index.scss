@@ -5,9 +5,9 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #dadee3;
-  color: #413D45;
-  background-color: #f6f5f6;
+  border-right: 1px solid var(--border-color);
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
 }
 
 .menu-panel {
@@ -16,7 +16,7 @@
     margin-top: 15px;
     margin-bottom: 15px;
     width: 100%;
-    border-top: 1px solid #dadee3;
+    border-top: 1px solid var(--border-color);
   }
 
   .font-style-base {
@@ -26,8 +26,13 @@
 
   .gist-tag {
     @extend .font-style-base;
-    color: #5F5B66;
+    color: var(--text-secondary-darken);
     cursor: pointer;
+    transition: color .15s;
+
+    &:hover {
+      color: var(--text-primary)
+    }
   }
 
   .configure-tag {
@@ -36,7 +41,7 @@
     height: 14px;
     box-sizing: content-box;
     cursor: pointer;
-    fill: #787282;
+    fill: var(--text-secondary);
     transition: fill .15s;
 
     svg {
@@ -71,6 +76,9 @@
     display: flex;
     flex-direction: column;
     margin-top: 15px;
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=927066
+    // The item should not have a minimum height
+    min-height: 0;
   }
 
   .tag-section-title {
@@ -82,6 +90,11 @@
     color: inherit;
     margin-bottom: 6px;
     position: relative;
+    transition: opacity .15s;
+
+    &:hover {
+      opacity: .65;
+    }
   }
 
   .tag-section {
@@ -90,12 +103,15 @@
     display: flex;
     flex-direction: column;
     padding: 15px 0;
-    border-top: 1px solid #dadee3;
+    border-top: 1px solid var(--border-color);
   }
 
   .tag-section-active {
     flex: 1 1 auto;
     max-height: none;
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=927066
+    // The item should not have a minimum height
+    min-height: 0;
   }
 
   .tag-section-hidden {
@@ -119,7 +135,7 @@
 
   .active-gist-tag {
     @extend .font-style-base;
-    color: #353138;
+    color: var(--text-primary);
     font-weight: bold;
     cursor: pointer;
   }
@@ -159,18 +175,4 @@
     font-weight: bold;
     cursor: pointer;
   }
-}
-
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-::-webkit-scrollbar-track {
-  border-radius: 0px;
-}
-
-::-webkit-scrollbar-thumb {
-  border-radius: 5px;
-  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.2);
 }

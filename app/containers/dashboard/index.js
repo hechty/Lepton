@@ -1,11 +1,10 @@
-'use strict'
-
-import React, { Component } from 'react'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 import { Modal, Image } from 'react-bootstrap'
 import { Radar } from 'react-chartjs'
 import { updateDashboardModalStatus } from '../../actions'
+import React, { Component } from 'react'
+
 import robotocatImage from '../../utilities/octodex/robotocat.png'
 
 import './index.scss'
@@ -35,6 +34,7 @@ class Dashboard extends Component {
     )
   }
 
+  // https://github.com/chartjs/Chart.js/blob/v1.1.1/docs/03-Radar-Chart.md
   buildRadarChart (data, labels) {
     const GREY = '#C2C4D1'
     const chartData = {

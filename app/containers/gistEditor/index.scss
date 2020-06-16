@@ -9,12 +9,20 @@
 }
 
 .CodeMirror-gutters {
-  border-right: 1px solid #dadee3;
-  background-color: #f6f5f6;
+  border-right: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+// To overwrite the gutter color under one-dark theme
+.cm-s-one-dark .CodeMirror-gutter, 
+.cm-s-one-dark .CodeMirror-gutters {
+  border: none;
+  background-color: var(--bg-secondary);
 }
 
 .CodeMirror-scroll {
   min-height: 400px;
+  background: var(--bg-primary);
 }
 
 .CodeMirror-empty {
@@ -65,3 +73,4 @@
 @import '../../../node_modules/codemirror/mode/tiki/tiki.css';
 @import '../../../node_modules/codemirror/addon/dialog/dialog.css';
 @import '../../../node_modules/codemirror/addon/fold/foldgutter.css';
+@import '../../../node_modules/codemirror-one-dark-theme/one-dark.css';

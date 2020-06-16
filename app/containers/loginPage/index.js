@@ -1,9 +1,8 @@
-'use strict'
-
-import React, { Component } from 'react'
+import { Alert, Button, Image, Modal, ProgressBar } from 'react-bootstrap'
 import { connect } from 'react-redux'
 import { remote, ipcRenderer } from 'electron'
-import { Alert, Button, Image, Modal, ProgressBar } from 'react-bootstrap'
+import React, { Component } from 'react'
+
 import dojocatImage from '../../utilities/octodex/dojocat.jpg'
 import privateinvestocatImage from '../../utilities/octodex/privateinvestocat.jpg'
 
@@ -77,11 +76,15 @@ class LoginPage extends Component {
   renderControlSection () {
     const { authWindowStatus, loggedInUserInfo, userSessionStatus } = this.props
     const loggedInUserName = loggedInUserInfo ? loggedInUserInfo.profile : null
+    const welcomeMessage = 'Lepton is FREE. Like us in GitHub!'
 
     if (userSessionStatus === 'IN_PROGRESS') {
       return (
         <div className='button-group-modal'>
           <ProgressBar active now={ 100 }/>
+          <div className="login-page-footer">
+            <a href="https://github.com/hackjutsu/Lepton">{ welcomeMessage }</a>
+          </div>
         </div>
       )
     }
@@ -92,10 +95,13 @@ class LoginPage extends Component {
           <Button
             autoFocus
             className='modal-button'
-            bsStyle="success"
+            bsStyle="default"
             onClick={ this.handleContinueButtonClicked.bind(this) }>
             { loggedInUserName ? `Continue as ${loggedInUserName}` : 'HAPPY CODING' }
           </Button>
+          <div className="login-page-footer">
+            <a href="https://github.com/hackjutsu/Lepton">{ welcomeMessage }</a>
+          </div>
         </div>
       )
     }
@@ -115,6 +121,9 @@ class LoginPage extends Component {
             onClick={ this.handleLoginClicked.bind(this) }>
             GitHub Login
           </Button>
+          <div className="login-page-footer">
+            <a href="https://github.com/hackjutsu/Lepton">{ welcomeMessage }</a>
+          </div>
         </div>
       )
     }

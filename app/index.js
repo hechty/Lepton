@@ -1,5 +1,3 @@
-'use strict'
-
 import fs from 'fs'
 import { remote, ipcRenderer } from 'electron'
 import React from 'react'
@@ -18,13 +16,15 @@ import Store from './utilities/store'
 import {
   addLangPrefix as Prefixed,
   parseCustomTags,
-  descriptionParser } from './utilities/parser'
+  descriptionParser
+} from './utilities/parser'
 
 import {
   getGitHubApi,
   GET_ALL_GISTS,
   GET_USER_PROFILE,
-  EXCHANGE_ACCESS_TOKEN } from './utilities/githubApi'
+  EXCHANGE_ACCESS_TOKEN
+} from './utilities/githubApi'
 
 import RootReducer from './reducers'
 import {
@@ -47,7 +47,7 @@ import {
   updatePinnedTags
 } from './actions/index'
 
-import Notifier from './utilities/notifier'
+import { notifySuccess, notifyFailure } from './utilities/notifier'
 
 const logger = remote.getGlobal('logger')
 
@@ -94,19 +94,22 @@ function launchAuthWindow (token) {
     width: 400,
     height: 600,
     show: false,
-    webPreferences })
-  let githubUrl = 'https://github.com/login/oauth/authorize?'
-  let authUrl = githubUrl + 'client_id=' + CONFIG_OPTIONS.client_id + '&scope=' + CONFIG_OPTIONS.scopes
-  logger.debug('loading authUrl' + authUrl)
-  authWindow.loadURL(authUrl)
+    webPreferences
+  })
+  const githubUrl = 'https://github.com/login/oauth/authorize?'
+  const authUrl = githubUrl + 'client_id=' + CONFIG_OPTIONS.client_id + '&scope=' + CONFIG_OPTIONS.scopes
+  const options = { extraHeaders: 'pragma: no-cache\n' }
+
+  logger.debug('loading authUrl ' + authUrl)
+  authWindow.loadURL(authUrl, options)
   authWindow.show()
 
   updateAuthWindowStatusOn()
 
   function handleCallback (url) {
-    let rawCode = /code=([^&]*)/.exec(url) || null
-    let code = (rawCode && rawCode.length > 1) ? rawCode[1] : null
-    let error = /\?error=(.+)$/.exec(url)
+    const rawCode = /code=([^&]*)/.exec(url) || null
+    const code = (rawCode && rawCode.length > 1) ? rawCode[1] : null
+    const error = /\?error=(.+)$/.exec(url)
 
     if (code || error) {
       // Close the browser if code found or error
@@ -128,7 +131,7 @@ function launchAuthWindow (token) {
         })
         .catch((err) => {
           logger.error('Failed: ' + JSON.stringify(err.error))
-          Notifier('Sync failed', 'Please check your network condition. 03')
+          notifyFailure('Sync failed', 'Please check your network condition. 03')
         })
     } else if (error) {
       logger.error('Oops! Something went wrong and we couldn\'t' +
@@ -194,7 +197,7 @@ function updateActiveGistTagAfterSync (gistTags, newActiveTagCandidate) {
   // The active language tag could be invalid if the specific language tag no
   // long exists after synchronization. We should get the effective active tag
   // by calling getEffectiveActiveGistTagAfterSync()
-  let effectiveGistTag = getEffectiveActiveGistTagAfterSync(gistTags, newActiveTagCandidate)
+  const effectiveGistTag = getEffectiveActiveGistTagAfterSync(gistTags, newActiveTagCandidate)
   if (effectiveGistTag !== preSyncSnapshot.activeGistTag) {
     logger.info('[Dispatch] selectGistTag')
     reduxStore.dispatch(selectGistTag(newActiveTagCandidate))
@@ -221,16 +224,16 @@ function updateActiveGistAfterSync (gists, gistTags, newActiveTagCandidate) {
   let activeGist = preSyncSnapshot.activeGist
   if (!activeGist || !gists[activeGist]) {
     // If the previous active gist is not set or is deleted, we should reset it.
-    let effectiveGistTag = getEffectiveActiveGistTagAfterSync(gistTags, newActiveTagCandidate)
-    let gistListForActiveGistTag = gistTags[effectiveGistTag]
+    const effectiveGistTag = getEffectiveActiveGistTagAfterSync(gistTags, newActiveTagCandidate)
+    const gistListForActiveGistTag = gistTags[effectiveGistTag]
     activeGist = gistListForActiveGistTag[0] // reset the active gist
   }
   updateActiveGistBase(gists, activeGist)
 }
 
 function updateActiveGistAfterClicked (gists, gistTags, newActiveTag) {
-  let gistListForActiveGistTag = gistTags[newActiveTag]
-  let activeGist = gistListForActiveGistTag[0] // reset the active gist
+  const gistListForActiveGistTag = gistTags[newActiveTag]
+  const activeGist = gistListForActiveGistTag[0] // reset the active gist
   updateActiveGistBase(gists, activeGist)
 }
 /** End: Acitive gist management **/
@@ -242,7 +245,7 @@ function updateGistStoreAfterSync (gists) {
 }
 
 function takeSyncSnapshot () {
-  let state = reduxStore.getState()
+  const state = reduxStore.getState()
   preSyncSnapshot = {
     activeGistTag: state.activeGistTag,
     activeGist: state.activeGist
@@ -257,7 +260,7 @@ function clearSyncSnapshot () {
 }
 
 function reSyncUserGists () {
-  let { userSession, accessToken } = reduxStore.getState()
+  const { userSession, accessToken } = reduxStore.getState()
   updateUserGists(userSession.profile.login, accessToken)
 }
 
@@ -265,29 +268,29 @@ function updateUserGists (userLoginId, token) {
   reduxStore.dispatch(updateGistSyncStatus('IN_PROGRESS'))
   return getGitHubApi(GET_ALL_GISTS)(token, userLoginId)
     .then((gistList) => {
-      let preGists = reduxStore.getState().gists
-      let gists = {}
-      let rawGistTags = {}
-      let activeTagCandidate = Prefixed('All')
+      const preGists = reduxStore.getState().gists
+      const gists = {}
+      const rawGistTags = {}
+      const activeTagCandidate = Prefixed('All')
       rawGistTags[Prefixed('All')] = new Set()
-      let gistTags = {}
-      let fuseSearchIndex = []
+      const gistTags = {}
+      const fuseSearchIndex = []
 
       gistList.forEach((gist) => {
-        let langs = new Set()
+        const langs = new Set()
         let filenameRecords = ''
 
         Object.keys(gist.files).forEach(filename => {
           // leave a space in between to help tokenization
           filenameRecords += ', ' + filename
-          let file = gist.files[filename]
-          let language = file.language || 'Other'
+          const file = gist.files[filename]
+          const language = file.language || 'Other'
           langs.add(language)
           rawGistTags[Prefixed('All')].add(gist.id)
 
           // update the language tags
-          let prefixedLang = Prefixed(language)
-          if (rawGistTags.hasOwnProperty(prefixedLang)) {
+          const prefixedLang = Prefixed(language)
+          if (Object.prototype.hasOwnProperty.call(rawGistTags, prefixedLang)) {
             rawGistTags[prefixedLang].add(gist.id)
           } else {
             rawGistTags[prefixedLang] = new Set()
@@ -295,9 +298,9 @@ function updateUserGists (userLoginId, token) {
           }
 
           // update the custom tags
-          let customTags = parseCustomTags(descriptionParser(gist.description).customTags)
+          const customTags = parseCustomTags(descriptionParser(gist.description).customTags)
           customTags.forEach(tag => {
-            if (rawGistTags.hasOwnProperty(tag)) {
+            if (Object.prototype.hasOwnProperty.call(rawGistTags, tag)) {
               rawGistTags[tag].add(gist.id)
             } else {
               rawGistTags[tag] = new Set()
@@ -314,7 +317,7 @@ function updateUserGists (userLoginId, token) {
 
         // Keep the date for the unchanged gist, so that user doesn't need
         // to resync.
-        let preGist = preGists[gist.id]
+        const preGist = preGists[gist.id]
         if (preGist && preGist.details && preGist.details.updated_at === gist.updated_at) {
           gists[gist.id] = Object.assign(gists[gist.id], { details: preGist.details })
         }
@@ -335,7 +338,7 @@ function updateUserGists (userLoginId, token) {
 
       SearchIndex.resetFuseIndex(fuseSearchIndex)
 
-      for (let language in rawGistTags) {
+      for (const language in rawGistTags) {
         // Save the gist ids in an Array rather than a Set, which facilitate
         // many operations later, like displaying the gist id from an Array
         gistTags[language] = [...rawGistTags[language]]
@@ -345,7 +348,7 @@ function updateUserGists (userLoginId, token) {
       takeSyncSnapshot()
 
       // refresh the redux state
-      let humanReadableSyncTime = HumanReadableTime(new Date())
+      const humanReadableSyncTime = HumanReadableTime(new Date())
       setSyncTime(humanReadableSyncTime)
       updateGistStoreAfterSync(gists)
       updateGistTagsAfterSync(gistTags)
@@ -355,11 +358,12 @@ function updateUserGists (userLoginId, token) {
       // clean up the snapshot for the previous state
       clearSyncSnapshot()
 
-      Notifier('Sync succeeds', humanReadableSyncTime)
+      notifySuccess('Sync succeeds', humanReadableSyncTime)
+
       reduxStore.dispatch(updateGistSyncStatus('DONE'))
     })
     .catch(err => {
-      Notifier('Sync failed', 'Please check your network condition. 04')
+      notifyFailure('Sync failed', 'Please check your network condition. 04')
       logger.error('The request has failed: ' + err)
       reduxStore.dispatch(updateGistSyncStatus('DONE'))
       throw err
@@ -392,10 +396,12 @@ function initUserSession (token) {
       syncLocalPref(newProfile.login)
       logger.debug('-----> after syncLocalPref')
 
-      remote.getCurrentWindow().setTitle(`${ newProfile.login } | Lepton`) // update the app title
+      remote.getCurrentWindow().setTitle(`${newProfile.login} | Lepton`) // update the app title
 
       logger.info('[Dispatch] updateUserSession ACTIVE')
       reduxStore.dispatch(updateUserSession({ activeStatus: 'ACTIVE', profile: newProfile }))
+
+      ipcRenderer.send('session-ready')
     })
     .catch((err) => {
       logger.debug('-----> Failure with ' + JSON.stringify(err))
@@ -408,7 +414,7 @@ function initUserSession (token) {
         logger.info('[Dispatch] updateUserSession INACTIVE')
         reduxStore.dispatch(updateUserSession({ activeStatus: 'INACTIVE' }))
       }
-      Notifier('Sync failed', 'Please check your network condition. 00')
+      notifyFailure('Sync failed', 'Please check your network condition. 00')
     })
 }
 /** End: User session management **/
@@ -427,7 +433,7 @@ function updateLocalStorage (data) {
     logger.debug(`-----> Caching image ${data.image}`)
     downloadImage(data.image, data.profile)
 
-    logger.debug(`-----> User info is cached.`)
+    logger.debug('-----> User info is cached.')
   } catch (e) {
     logger.error(`-----> Failed to cache user info. ${JSON.stringify(e)}`)
   }
@@ -435,7 +441,7 @@ function updateLocalStorage (data) {
 
 function downloadImage (imageUrl, filename) {
   if (!imageUrl) {
-    logger.debug(`-----> imageUrl is null`)
+    logger.debug('-----> imageUrl is null')
     return
   }
 
@@ -444,7 +450,7 @@ function downloadImage (imageUrl, filename) {
     fs.mkdirSync(userProfilePath)
   }
 
-  let imagePath = userProfilePath + filename + '.png'
+  const imagePath = userProfilePath + filename + '.png'
   ImageDownloader({
     url: imageUrl,
     dest: imagePath,
@@ -492,12 +498,8 @@ function syncLocalPref (userName) {
 /** End: Local storage management **/
 
 /** Start: Response to main process events **/
-function allDialogsClosed (dialogs) {
-  let status = true
-  dialogs.forEach(dialog => {
-    if (dialog !== 'OFF') status = false
-  })
-  return status
+function allDialogsClosed (dialogsStatus) {
+  return dialogsStatus.every(status => status === 'OFF')
 }
 
 ipcRenderer.on('search-gist', data => {
@@ -510,7 +512,8 @@ ipcRenderer.on('search-gist', data => {
     gistNewModalStatus,
     aboutModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus } = state
+    logoutModalStatus
+  } = state
 
   // FIXME: This should be able to extracted to the allDialogsClosed method.
   const dialogs = [
@@ -520,7 +523,7 @@ ipcRenderer.on('search-gist', data => {
     gistNewModalStatus,
     aboutModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus ]
+    logoutModalStatus]
   if (allDialogsClosed(dialogs)) {
     const preStatus = searchWindowStatus
     const newStatus = preStatus === 'ON' ? 'OFF' : 'ON'
@@ -539,7 +542,8 @@ ipcRenderer.on('dashboard', data => {
     gistEditModalStatus,
     gistNewModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus } = state
+    logoutModalStatus
+  } = state
 
   // FIXME: This should be able to extracted to the allDialogsClosed method.
   const dialogs = [
@@ -550,7 +554,7 @@ ipcRenderer.on('dashboard', data => {
     searchWindowStatus,
     gistNewModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus ]
+    logoutModalStatus]
   if (allDialogsClosed(dialogs)) {
     const preStatus = dashboardModalStatus
     const newStatus = preStatus === 'ON' ? 'OFF' : 'ON'
@@ -568,7 +572,8 @@ ipcRenderer.on('about-page', data => {
     gistEditModalStatus,
     gistNewModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus } = state
+    logoutModalStatus
+  } = state
 
   // FIXME: This should be able to extracted to the allDialogsClosed method.
   const dialogs = [
@@ -578,7 +583,7 @@ ipcRenderer.on('about-page', data => {
     searchWindowStatus,
     gistNewModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus ]
+    logoutModalStatus]
   if (allDialogsClosed(dialogs)) {
     const preStatus = aboutModalStatus
     const newStatus = preStatus === 'ON' ? 'OFF' : 'ON'
@@ -596,7 +601,8 @@ ipcRenderer.on('new-gist', data => {
     gistNewModalStatus,
     gistEditModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus } = state
+    logoutModalStatus
+  } = state
 
   // FIXME: This should be able to extracted to the allDialogsClosed method.
   const dialogs = [
@@ -607,7 +613,7 @@ ipcRenderer.on('new-gist', data => {
     gistNewModalStatus,
     gistEditModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus ]
+    logoutModalStatus]
   if (allDialogsClosed(dialogs)) {
     ipcRenderer.emit('new-gist-renderer')
   }
@@ -622,7 +628,8 @@ ipcRenderer.on('edit-gist', data => {
     gistNewModalStatus,
     gistEditModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus } = state
+    logoutModalStatus
+  } = state
 
   // FIXME: This should be able to extracted to the allDialogsClosed method.
   const dialogs = [
@@ -632,9 +639,37 @@ ipcRenderer.on('edit-gist', data => {
     searchWindowStatus,
     aboutModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus ]
+    logoutModalStatus]
   if (allDialogsClosed(dialogs)) {
     ipcRenderer.emit('edit-gist-renderer')
+  }
+})
+
+ipcRenderer.on('delete-gist-check', data => {
+  const state = reduxStore.getState()
+  const {
+    gistRawModal,
+    searchWindowStatus,
+    aboutModalStatus,
+    gistNewModalStatus,
+    gistEditModalStatus,
+    gistDeleteModalStatus,
+    dashboardModalStatus,
+    logoutModalStatus
+  } = state
+
+  // FIXME: This should be able to extracted to the allDialogsClosed method.
+  const dialogs = [
+    gistRawModal.status,
+    gistNewModalStatus,
+    gistEditModalStatus,
+    searchWindowStatus,
+    aboutModalStatus,
+    gistDeleteModalStatus,
+    logoutModalStatus,
+    dashboardModalStatus]
+  if (allDialogsClosed(dialogs)) {
+    ipcRenderer.emit('delete-gist')
   }
 })
 
@@ -648,7 +683,8 @@ ipcRenderer.on('immersive-mode', data => {
     gistEditModalStatus,
     gistNewModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus } = state
+    logoutModalStatus
+  } = state
 
   const dialogs = [
     searchWindowStatus,
@@ -657,7 +693,7 @@ ipcRenderer.on('immersive-mode', data => {
     gistEditModalStatus,
     gistNewModalStatus,
     gistDeleteModalStatus,
-    logoutModalStatus ]
+    logoutModalStatus]
   if (allDialogsClosed(dialogs)) {
     const preStatus = immersiveMode
     const newStatus = preStatus === 'ON' ? 'OFF' : 'ON'
@@ -692,7 +728,7 @@ const reduxStore = createStore(
 )
 
 ReactDom.render(
-  <Provider store={ reduxStore }>
+  <Provider store = { reduxStore }>
     <AppContainer
       searchIndex = { SearchIndex }
       localPref = { localPref }

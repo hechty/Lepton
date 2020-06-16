@@ -1,10 +1,8 @@
-'use strict'
-
 const nb = require('notebookjs')
 const Prism = require('prismjs')
 const highlighter = (code, lang) => {
   if (typeof lang === 'undefined') lang = 'markup'
-  if (!Prism.languages.hasOwnProperty(lang)) {
+  if (!Object.prototype.hasOwnProperty.call(Prism.languages, lang)) {
     try {
       require('prismjs/components/prism-' + lang + '.js')
     } catch (e) {

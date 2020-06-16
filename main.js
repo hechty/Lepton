@@ -1,5 +1,3 @@
-'use strict'
-
 const os = require('os')
 const electron = require('electron')
 const nconf = require('nconf')
@@ -20,9 +18,9 @@ const isDev = require('electron-is-dev')
 const defaultConfig = require('./configs/defaultConfig')
 const appInfo = require('./package.json')
 
-const autoUpdater = require('electron-updater').autoUpdater
+const { autoUpdater } = require("electron-updater")
 autoUpdater.logger = logger
-autoUpdater.autoDownload = true
+autoUpdater.autoDownload = nconf.get('autoUpdate')
 
 initGlobalConfigs()
 initGlobalLogger()
@@ -37,15 +35,7 @@ for (const key of Object.getOwnPropertyNames(defaultConfig)) {
 
 let mainWindow = null
 
-const keyShortcutForSearch = 'Shift+Space'
-const keyNewGist = 'CommandOrControl+N'
-const keyEditGist = 'CommandOrControl+E'
-const keySubmitGist = 'CommandOrControl+S'
-const keyImmersiveMode = 'CommandOrControl+I'
-const keyAboutPage = 'CommandOrControl+,'
-const keyDashboard = 'CommandOrControl+D'
-const keyEditorExit = 'CommandOrControl+Escape'
-const keySyncGists = 'CommandOrControl+R'
+const shortcuts = nconf.get('shortcuts')
 
 function createWindowAndAutoLogin () {
   createWindow(true)
@@ -59,17 +49,22 @@ function createWindow (autoLogin) {
     defaultHeight: 800
   })
 
+  const webPreferences = {
+    nodeIntegration: true
+  }
+
   mainWindow = new BrowserWindow({
     width: mainWindowState.width,
     height: mainWindowState.height,
     x: mainWindowState.x,
     y: mainWindowState.y,
-    minWidth: 1000,
-    minHeight: 700,
+    minWidth: 636,
+    minHeight: 609,
     // titleBarStyle: 'hidden',
     backgroundColor: '#808080',
     show: false,
-    icon: path.join(__dirname, '/icon/icon.png')
+    icon: path.join(__dirname, '/icon/icon.png'),
+    webPreferences
   })
 
   if (autoLogin) {
@@ -81,6 +76,14 @@ function createWindow (autoLogin) {
       ipcMain.removeAllListeners('login-page-ready')
     })
   }
+
+  ipcMain.on('session-ready', () => {
+    setUpTouchBar()
+  })
+
+  ipcMain.on('session-destroyed', () => {
+    mainWindow.setTouchBar(null)
+  })
 
   // Let us register listeners on the window, so we can update the state
   // automatically (the listeners will be removed when the window is closed)
@@ -95,22 +98,22 @@ function createWindow (autoLogin) {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
     console.timeEnd('init')
-    // autoUpdater.on('error', data => {
-    //   logger.debug('[autoUpdater] error ' + JSON.stringify(data))
-    // })
-    // autoUpdater.on('update-not-available', () => {
-    //   logger.debug('[autoUpdater] update-not-available')
-    // })
-    // autoUpdater.on('update-available', (info) => {
-    //   logger.debug('[autoUpdater] update-available. ' + mainWindow)
-    //   global.newVersionInfo = info
-    //   mainWindow && mainWindow.webContents.send('update-available')
-    // })
+    autoUpdater.on('error', data => {
+      logger.debug('[autoUpdater] error ' + JSON.stringify(data))
+    })
+    autoUpdater.on('update-not-available', () => {
+      logger.debug('[autoUpdater] update-not-available')
+    })
+    autoUpdater.on('update-available', (info) => {
+      logger.debug('[autoUpdater] update-available. ' + mainWindow)
+      global.newVersionInfo = info
+      mainWindow && mainWindow.webContents.send('update-available')
+    })
 
-    // Only run auto update checker in production.
-    // if (!isDev && !appInfo.version.includes('alpha')) {
-    //     autoUpdater.checkForUpdates()
-    // }
+    //Only run auto update checker in production.
+    if (!isDev && !appInfo.version.includes('alpha')) {
+        autoUpdater.checkForUpdates()
+    }
   })
 
   mainWindow.on('close', (e) => {
@@ -175,32 +178,37 @@ function setUpApplicationMenu () {
     submenu: [
       {
         label: 'New Gist',
-        accelerator: keyNewGist,
+        accelerator: shortcuts.keyNewGist,
         click: (item, mainWindow) => mainWindow && mainWindow.send('new-gist')
       },
       {
         label: 'Edit Gist',
-        accelerator: keyEditGist,
+        accelerator: shortcuts.keyEditGist,
         click: (item, mainWindow) => mainWindow && mainWindow.send('edit-gist')
       },
       {
+        label: 'Delete Gist',
+        accelerator: shortcuts.keyDeleteGist,
+        click: (item, mainWindow) => mainWindow && mainWindow.send('delete-gist-check')
+      },
+      {
         label: 'Submit Gist',
-        accelerator: keySubmitGist,
+        accelerator: shortcuts.keySubmitGist,
         click: (item, mainWindow) => mainWindow && mainWindow.send('submit-gist')
       },
       {
         label: 'Sync Gist',
-        accelerator: keySyncGists,
+        accelerator: shortcuts.keySyncGists,
         click: (item, mainWindow) => mainWindow && mainWindow.send('sync-gists')
       },
       {
         label: 'Exit Editor',
-        accelerator: keyEditorExit,
+        accelerator: shortcuts.keyEditorExit,
         click: (item, mainWindow) => mainWindow && mainWindow.send('exit-editor')
       },
       {
         label: 'Immersive Mode',
-        accelerator: keyImmersiveMode,
+        accelerator: shortcuts.keyImmersiveMode,
         click: (item, mainWindow) => mainWindow && mainWindow.send('immersive-mode')
       },
       {
@@ -210,17 +218,17 @@ function setUpApplicationMenu () {
       },
       {
         label: 'Dashboard',
-        accelerator: keyDashboard,
+        accelerator: shortcuts.keyDashboard,
         click: (item, mainWindow) => mainWindow && mainWindow.send('dashboard')
       },
       {
         label: 'About',
-        accelerator: keyAboutPage,
+        accelerator: shortcuts.keyAboutPage,
         click: (item, mainWindow) => mainWindow && mainWindow.send('about-page')
       },
       {    
         label: 'Search',
-        accelerator: keyShortcutForSearch,
+        accelerator: shortcuts.keyShortcutForSearch,
         click: (item, mainWindow) => mainWindow && mainWindow.send('search-gist')
       }
     ]
@@ -228,6 +236,57 @@ function setUpApplicationMenu () {
   let template = [...mainMenuTemplate, gistMenu]
   const menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
+}
+
+function setUpTouchBar() {
+  const makeIcon = name => {
+    return electron.nativeImage
+      .createFromPath(path.join(__dirname, `/build/touchbar/${name}.png`))
+      .resize({
+        width: 16,
+        height: 16
+      })
+  }
+  const { TouchBar } = electron
+  const { TouchBarButton, TouchBarSpacer, TouchBarGroup } = TouchBar
+  const touchBar = new TouchBar({
+    items: [
+      new TouchBarButton({
+        label: "Immersive",
+        icon: makeIcon("immersive"),
+        iconPosition: "left",
+        click: () => mainWindow.send("immersive-mode")
+      }),
+      new TouchBarButton({
+        label: "Sync",
+        icon: makeIcon("sync"),
+        iconPosition: "left",
+        click: () => mainWindow.send("sync-gists")
+      }),
+      new TouchBarButton({
+        label: "Search",
+        icon: makeIcon("search"),
+        iconPosition: "left",
+        click: () => mainWindow.send("search-gist")
+      }),
+      new TouchBarSpacer({
+        size: "flexible"
+      }),
+      new TouchBarButton({
+        label: "New",
+        icon: makeIcon("new"),
+        iconPosition: "left",
+        click: () => mainWindow.send("new-gist")
+      }),
+      new TouchBarButton({
+        label: "Edit",
+        icon: makeIcon("edit"),
+        iconPosition: "left",
+        click: () => mainWindow.send("edit-gist")
+      })
+    ]
+  })
+  mainWindow.setTouchBar(touchBar)
 }
 
 function initGlobalConfigs () {
@@ -239,26 +298,28 @@ function initGlobalConfigs () {
   } catch (error) {
     logger.error('[.leptonrc] Please correct the mistakes in your configuration file: [%s].\n' + error, configFilePath)
   }
-
-  nconf.defaults(defaultConfig)  
+  nconf.defaults(defaultConfig)
   global.conf = nconf
+  global.configFilePath = configFilePath
 }
 
 function initGlobalLogger () {
   logger.level = nconf.get('logger:level')
-  let appFolder = app.getPath('userData')
+  const appFolder = app.getPath('userData')
   if (!fs.existsSync(appFolder)) {
     fs.mkdirSync(appFolder)
   }
-  let logFolder = path.join(app.getPath('userData'), 'logs')
+  const logFolder = path.join(app.getPath('userData'), 'logs')
   if (!fs.existsSync(logFolder)) {
     fs.mkdirSync(logFolder)
   }
-  let logFile = new Date().toISOString().replace(/:/g, '.') + '.log'
+  const logFile = new Date().toISOString().replace(/:/g, '.') + '.log'
+  const logFilePath = path.join(logFolder, logFile)
   logger.add(logger.transports.File, {
       json: false,
       exitOnError: false,
-      filename: path.join(logFolder, logFile),
+      filename: logFilePath,
       timestamp: true })
   global.logger = logger
+  global.logFilePath = logFilePath
 }

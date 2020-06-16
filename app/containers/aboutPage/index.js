@@ -1,22 +1,26 @@
-'use strict'
-
-import React, { Component } from 'react'
 import { bindActionCreators } from 'redux'
 import { connect } from 'react-redux'
 import { Modal, Image } from 'react-bootstrap'
-import LicenseInfo from '../../../license.json'
-import logoImage from './logo.png'
-import appInfo from '../../../package.json'
+import { remote } from 'electron'
 import { updateAboutModalStatus } from '../../actions'
+import appInfo from '../../../package.json'
+import LicenseInfo from '../../../license.json'
+import logoDarkImage from './logo-dark.png'
+import logoLightImage from './logo-light.png'
+import React, { Component } from 'react'
 
 import './index.scss'
+
+const conf = remote.getGlobal('conf')
+const logFilePath = remote.getGlobal('logFilePath')
+const configFilePath = remote.getGlobal('configFilePath')
 
 class AboutPage extends Component {
   renderAboutSection () {
     const licenseList = []
     /* Add Evil icons license as an exception */
     licenseList.push(
-      <div key='Evil icons@1.9.0' className='license-item'>
+      <div key ='Evil icons@1.9.0' className='license-item'>
         <div className='license-project'>Evil icons@1.9.0</div>
         <div className='license-type'>License: MIT</div>
       </div>
@@ -35,6 +39,8 @@ class AboutPage extends Component {
       )
     })
 
+    const logoImage = conf.get('theme') === 'dark' ? logoDarkImage : logoLightImage
+
     return (
       <div className='about-section'>
         <div className='logo-section'>
@@ -43,6 +49,14 @@ class AboutPage extends Component {
           <a className='logo-sub' href='https://github.com/hackjutsu/Lepton'>GitHub</a>
           <a className='logo-sub' href='https://github.com/hackjutsu/Lepton/issues'>Feedback</a>
           <a className='logo-sub' href='https://github.com/hackjutsu/Lepton/blob/master/LICENSE'>License</a>
+        </div>
+        <div className='setting-title'>Configs(.leptonrc)</div>
+        <div className='one-line-section'>
+          { configFilePath }
+        </div>
+        <div className='setting-title'>Logs</div>
+        <div className='one-line-section'>
+          { logFilePath }
         </div>
         <div className='setting-title'>Contributors</div>
         <div className='contributor-section'>
@@ -62,6 +76,15 @@ class AboutPage extends Component {
           <div className='contributor'><a href='https://github.com/tonyxu-io'>tonyxu-io</a></div>
           <div className='contributor'><a href='https://github.com/rawrmonstar'>rawrmonstar</a></div>
           <div className='contributor'><a href='https://github.com/baybatu'>baybatu</a></div>
+          <div className='contributor'><a href='https://github.com/samuelmeuli'>samuelmeuli</a></div>
+          <div className='contributor'><a href='https://github.com/anthonyattard'>anthonyattard</a></div>
+          <div className='contributor'><a href='https://github.com/alexandreamadocastro'>alexandreamadocastro</a></div>
+          <div className='contributor'><a href='https://github.com/abnersajr'>abnersajr</a></div>
+          <div className='contributor'><a href='https://github.com/seancheung'>seancheung</a></div>
+          <div className='contributor'><a href='https://github.com/moia-sven-ole'>moia-sven-ole</a></div>
+          <div className='contributor'><a href='https://github.com/GabrielNicolasAvellaneda'>GabrielNicolasAvellaneda</a></div>
+          <div className='contributor'><a href='https://github.com/sunxyw'>sunxyw</a></div>
+          <div className='contributor'><a href='https://github.com/dideler'>dideler</a></div>
         </div>
         <div className='setting-title'>Acknowledgement</div>
         <div className='license-section'>

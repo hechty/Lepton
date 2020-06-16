@@ -3,6 +3,7 @@
   .font-style-base {
     font-family: -apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI, Ubuntu, Droid Sans, sans-serif;
     font-size: 14px;
+    color: var(--text-primary);
   }
 
   .font-style-blue {
@@ -36,8 +37,8 @@
   .gist-editor-section .panel-heading {
     padding: 2px 5px !important;
     color: inherit;
-    border-color: #dadee3;
-    background-color: #f6f5f6;
+    border-color: var(--border-color);
+    background-color: var(--bg-secondary);
   }
 
   .gist-editor-input-area {
@@ -45,9 +46,10 @@
     flex: 1 1 95%;
     padding: 5px 10px;
     border: solid 1px;
-    border-color: #dadee3;
+    border-color: var(--border-color);
     border-radius: 3px;
     margin-right: 10px;
+    background: var(--bg-primary);
   }
 
   .gist-editor-filename-area {
@@ -56,12 +58,13 @@
     margin: 5px 20px 5px 0px;
     padding: 5px 10px;
     border: solid  1px;
-    border-color: #dadee3;
+    border-color: var(--border-color);
     border-radius: 3px;
+    background: var(--bg-primary);
   }
 
   .panel {
-    border-color: #dadee3;
+    border-color: var(--border-color);
     border-radius: 0;
   }
 
@@ -77,6 +80,7 @@
   .gist-editor-gist-file {
     border: 0px;
     padding: 10px 0px !important;
+    background: var(--text-bg-primary);
   }
 
   .control-button-group {
@@ -94,7 +98,7 @@
   }
 
   .gist-editor-privacy-checkbox {
-    @extend .font-style-blue;
+    @extend .font-style-base;
     display: inline;
     float: right;
   }
@@ -116,12 +120,24 @@
     font-style: italic;
     flex: 0 0 auto;
     position: relative;
+
+    & > span {
+      vertical-align: middle;
+    }
   }
 
   .tips-icon {
-    height: 25px;
-    width: 25px;
+    height: 24px;
+    width: 24px;
     display: inline-block;
     vertical-align: middle;
+    fill: currentColor;
+  }
+
+  hr {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border: 1;
+    border-top: 1px solid var(--border-color);
   }
 }

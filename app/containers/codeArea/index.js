@@ -1,18 +1,24 @@
-'use strict'
-
-import React, { Component } from 'react'
 import { remote } from 'electron'
 import HighlightJS from 'highlight.js'
 import hljsDefineSolidity from 'highlightjs-solidity'
 import Markdown from '../../utilities/markdown'
 import nb from '../../utilities/jupyterNotebook'
+import React, { Component } from 'react'
 
 import '../../utilities/vendor/prism/prism.scss'
-import '../../utilities/vendor/highlightJS/styles/github-gist.css'
 import './jupyterNotebook.scss'
 import './markdown.scss'
 
 const logger = remote.getGlobal('logger')
+const conf = remote.getGlobal('conf')
+
+// resolve syntax highlight style based on app theme
+if (conf.get('theme') === 'dark') {
+  require('../../utilities/vendor/highlightJS/styles/atom-one-dark.css')
+} else {
+  require('../../utilities/vendor/highlightJS/styles/github-gist.css')
+}
+
 hljsDefineSolidity(HighlightJS) // register solidity to hightlight.js
 
 export default class CodeArea extends Component {
@@ -60,24 +66,47 @@ export default class CodeArea extends Component {
     return `<pre><code><table class='code-table' style='tab-size: ${kTabLength};'>${contentTable}</table></code></pre>`
   }
 
-  //  Adapt the language name for Highlight.js. For example, 'C#' should be
-  //  expressed as 'cs' to be recognized by Highlight.js.
-  adaptedLanguage (lang) {
+  // Find the best language for code highlighting by best effort.
+  adaptedLanguage (filename, lang) {
     let language = lang || 'Other'
 
+    // Adjust the language based on file extensions.
+    const filenameExtension = filename.split('.').pop()
+    switch (filenameExtension) {
+      case 'leptonrc':
+        language = 'json'
+        break
+      case 'zshrc':
+        language = 'bash'
+        break
+      case 'sql':
+        language = 'sql'
+        break
+      case 'solidity':
+      case 'sol':
+        language = 'solidity'
+        break
+      default:
+      // intentionally left blank
+    }
+
+    //  Adapt the language name for Highlight.js. For example, 'C#' should be
+    //  expressed as 'cs' to be recognized by Highlight.js.
     switch (language) {
-      case 'Shell': return 'Bash'
+      case 'Shell': return 'bash'
       case 'C#': return 'cs'
       case 'Objective-C': return 'objectivec'
       case 'Objective-C++': return 'objectivec'
       case 'Visual Basic': return 'vbscript'
+      case 'Batchfile': return 'bat'
       default:
     }
+
     return language
   }
 
-  renderCodeArea (content, lang, kTabLength) {
-    const language = this.adaptedLanguage(lang)
+  renderCodeArea (filename, content, lang, kTabLength) {
+    const language = this.adaptedLanguage(filename, lang)
     let htmlContent = ''
     switch (language) {
       case 'Jupyter Notebook':
@@ -96,7 +125,7 @@ export default class CodeArea extends Component {
   }
 
   render () {
-    const { content, language, kTabLength } = this.props
-    return this.renderCodeArea(content, language, kTabLength)
+    const { filename, content, language, kTabLength } = this.props
+    return this.renderCodeArea(filename, content, language, kTabLength)
   }
 }

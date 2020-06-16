@@ -11,6 +11,7 @@
     width: 100%;
     padding: 10px;
     border: 0;
+    background: var(--bg-primary);
   }
 
   .search-box:focus {
@@ -26,17 +27,17 @@
 
   .search-result-item {
     padding: 10px 10px;
-    border-top: solid 1.5px rgb(237, 237, 237);
+    border-top: solid 1px var(--border-color);
   }
 
   .search-result-item:hover {
-    background: rgb(249, 249, 249);
+    background: rgba(0, 0, 0, 0.1);
     cursor: pointer;
   }
 
   .search-result-item-selected {
      @extend .search-result-item;
-     background: rgb(237, 237, 237);
+     background: rgba(0, 0, 0, 0.15);
   }
 
   .list-group {
@@ -66,7 +67,7 @@
     @extend .font-style-base;
     font-size: 15px;
     padding: 10px;
-    color: #787282;
+    color: var(--text-secondary);
   }
 
   .gist-tag-group {
@@ -108,7 +109,7 @@
     width: 100%;
     text-align: right;
     font-size: 10px;
-    color: #787282;
+    color: var(--text-secondary);
     font-style: italic;
   }
 
@@ -122,12 +123,12 @@
   .description-section {
     @extend .font-style-base;
     font-size: 12px;
-    color: #787282;
+    color: var(--text-secondary);
   }
 
   .custom-tags-section {
     @extend .font-style-base;
-    color: #787282;
+    color: var(--text-secondary);
     font-size: 10px;
     margin-left: 2px;
     margin-top: 3px;

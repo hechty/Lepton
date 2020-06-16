@@ -1,44 +1,42 @@
-'use strict'
-
-import React, { Component } from 'react'
-import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
-import { Panel, Modal, Button, ProgressBar, Collapse } from 'react-bootstrap'
+import { connect } from 'react-redux'
 import { default as GistEditorForm, UPDATE_GIST } from '../gistEditorForm'
-import CodeArea from '../codeArea'
+import { Panel, Modal, Button, ProgressBar, Collapse } from 'react-bootstrap'
 import { remote, clipboard, ipcRenderer } from 'electron'
-import Notifier from '../../utilities/notifier'
-import HumanReadableTime from 'human-readable-time'
 import Autolinker from 'autolinker'
+import CodeArea from '../codeArea'
+import HumanReadableTime from 'human-readable-time'
 import Moment from 'moment'
+import { notifySuccess, notifyFailure } from '../../utilities/notifier'
+import React, { Component } from 'react'
 import {
   addLangPrefix as Prefixed,
+  descriptionParser,
   parseCustomTags,
-  descriptionParser } from '../../utilities/parser'
-
+} from '../../utilities/parser'
 import {
-  updateSingleGist,
-  updateGistRawModal,
-  updateGistEditModeStatus,
-  updateGistDeleteModeStatus,
   selectGistTag,
   updateFileExpandStatus,
-  updateGistTags } from '../../actions'
-
+  updateGistDeleteModeStatus,
+  updateGistEditModeStatus,
+  updateGistRawModal,
+  updateGistTags,
+  updateSingleGist,
+} from '../../actions'
 import {
-  getGitHubApi,
+  DELETE_SINGLE_GIST,
   EDIT_SINGLE_GIST,
-  DELETE_SINGLE_GIST
+  getGitHubApi,
 } from '../../utilities/githubApi'
 
 import './index.scss'
 
 import editIcon from './ei-edit.svg'
-import openInWebIcon from './ei-share.svg'
 import eyeIcon from './ei-eye.svg'
-import trashIcon from './ei-trash.svg'
+import openInWebIcon from './ei-share.svg'
 import secretIcon from './lock.svg'
 import tagsIcon from './tags.svg'
+import trashIcon from './ei-trash.svg'
 
 const conf = remote.getGlobal('conf')
 const logger = remote.getGlobal('logger')
@@ -53,6 +51,9 @@ class Snippet extends Component {
     })
     ipcRenderer.on('exit-editor', () => {
       this.closeGistEditorModal()
+    })
+    ipcRenderer.on('delete-gist', () => {
+      this.showDeleteModal()
     })
   }
 
@@ -77,11 +78,11 @@ class Snippet extends Component {
       .catch(err => {
         logger.error('Failed to delete the gist ' + activeGist)
         logger.error(JSON.stringify(err))
-        Notifier('Deletion failed', 'Please check your network condition. 02')
+        notifyFailure('Deletion failed', 'Please check your network condition. 02')
       })
       .then(data => {
         logger.info('The gist ' + activeGist + ' has been deleted.')
-        Notifier('The gist has been deleted')
+        notifySuccess('The gist has been deleted')
 
         // For performance purpose, we should perform an internal update, like what
         // we're doing for creating/edit gists. However, since delete is an infrequent
@@ -155,7 +156,7 @@ class Snippet extends Component {
       description,
       processedFiles)
       .catch((err) => {
-        Notifier('Gist update failed')
+        notifyFailure('Gist update failed')
         logger.error(JSON.stringify(err))
       })
       .then((response) => {
@@ -164,8 +165,10 @@ class Snippet extends Component {
   }
 
   updateGistsStoreWithUpdatedGist (gistDetails) {
-    const { gists, activeGist, gistTags, activeGistTag, updateSingleGist,
-      updateGistTags, selectGistTag, searchIndex} = this.props
+    const {
+      gists, activeGist, gistTags, activeGistTag, updateSingleGist,
+      updateGistTags, selectGistTag, searchIndex
+    } = this.props
 
     const gistId = gistDetails.id
     const files = gistDetails.files
@@ -188,7 +191,7 @@ class Snippet extends Component {
       const language = file.language || 'Other'
       newLangs.add(language)
       const prefixedLang = Prefixed(language)
-      if (gistTags.hasOwnProperty(prefixedLang)) {
+      if (Object.prototype.hasOwnProperty.call(gistTags, prefixedLang)) {
         if (!gistTags[prefixedLang].includes(gistId)) {
           gistTags[prefixedLang].unshift(gistId)
         }
@@ -217,7 +220,7 @@ class Snippet extends Component {
     // We update the custom tags with the similar reasons mentioned above
     const newCustomTags = parseCustomTags(descriptionParser(gistDetails.description).customTags)
     newCustomTags.forEach(tag => {
-      if (gistTags.hasOwnProperty(tag)) {
+      if (Object.prototype.hasOwnProperty.call(gistTags, tag)) {
         if (!gistTags[tag].includes(gistId)) {
           gistTags[tag].unshift(gistId)
         }
@@ -276,7 +279,7 @@ class Snippet extends Component {
       filename: filenameRecords
     })
 
-    Notifier('Gist updated', HumanReadableTime(new Date()))
+    notifySuccess('Gist updated', HumanReadableTime(new Date()))
   }
 
   renderGistEditorModalBody (description, fileArray, isPrivate) {
@@ -327,12 +330,12 @@ class Snippet extends Component {
   handleCopyGistLinkClicked (snippet, file) {
     const link = snippet.details.html_url + '#file-' + file.filename.replace(/\./g, '-').toLowerCase()
     clipboard.writeText(link)
-    Notifier('Copied', 'The link has been copied to the clipboard.')
+    notifySuccess('Copied', 'The link has been copied to the clipboard.')
   }
 
   handleCopyGistFileClicked (gist) {
     clipboard.writeText(gist.content)
-    Notifier('Copied', 'The content has been copied to the clipboard.')
+    notifySuccess('Copied', 'The content has been copied to the clipboard.')
   }
 
   showRawModalModal (gist) {
@@ -374,7 +377,7 @@ class Snippet extends Component {
 
   handleCopyRawLinkClicked (url) {
     clipboard.writeText(url)
-    Notifier('Copied', 'The raw file link has been copied to the clipboard.')
+    notifySuccess('Copied', 'The raw file link has been copied to the clipboard.')
   }
 
   renderPanelHeader (activeSnippet) {
@@ -395,17 +398,17 @@ class Snippet extends Component {
               title='Edit'
               href='#'
               onClick={ this.showGistEditorModal.bind(this) }>
-              <div dangerouslySetInnerHTML={{__html: editIcon}} />
+              <div dangerouslySetInnerHTML={{ __html: editIcon }} />
             </a>
             <a className='snippet-control'
               title='Open in Web'
               href={ activeSnippet.brief.html_url }>
-              <div dangerouslySetInnerHTML={{__html: openInWebIcon}} />
+              <div dangerouslySetInnerHTML={{ __html: openInWebIcon }} />
             </a>
             <a className='snippet-control'
               title='Revisions'
               href={ activeSnippet.brief.html_url + '/revisions' }>
-              <div dangerouslySetInnerHTML={{__html: eyeIcon}} />
+              <div dangerouslySetInnerHTML={{ __html: eyeIcon }} />
             </a>
             {
               this.props.immersiveMode === 'OFF'
@@ -413,7 +416,7 @@ class Snippet extends Component {
                   title='Delete'
                   href='#'
                   onClick={ this.showDeleteModal.bind(this) }>
-                  <div dangerouslySetInnerHTML={{__html: trashIcon}} />
+                  <div dangerouslySetInnerHTML={{ __html: trashIcon }} />
                 </a>
                 : null
             }
@@ -432,11 +435,15 @@ class Snippet extends Component {
     }
     htmlForDescriptionSection.push(
       <div className='description-section' key='description'
-        dangerouslySetInnerHTML={ {__html: Autolinker.link(description, { stripPrefix: {
-          scheme: true,
-          www: true
-        },
-        newWindow: false })} }/>
+        dangerouslySetInnerHTML={ {
+          __html: Autolinker.link(description, {
+            stripPrefix: {
+              scheme: true,
+              www: true
+            },
+            newWindow: false
+          })
+        } }/>
     )
     htmlForDescriptionSection.push(
       <div className='custom-tags-section' key='customTags'>
@@ -488,12 +495,6 @@ class Snippet extends Component {
       for (const key in fileList) {
         const gistFile = fileList[key]
 
-        const filename = gistFile.filename
-        if (filename === '.leptonrc') gistFile.language = 'json'
-        else if (filename.endsWith('.sol') || filename.endsWith('.solidity')) {
-          gistFile.language = 'solidity'
-        }
-
         fileArray.push(Object.assign({
           filename: gistFile.filename,
           content: gistFile.content
@@ -540,7 +541,7 @@ class Snippet extends Component {
             </div>
             <Collapse in={ isExpanded }>
               <div className='collapsable-code-area'>
-                <CodeArea content={gistFile.content} language={gistFile.language} kTabLength={kTabLength}/>
+                <CodeArea filename={gistFile.filename} content={gistFile.content} language={gistFile.language} kTabLength={kTabLength}/>
               </div>
             </Collapse>
           </div>
